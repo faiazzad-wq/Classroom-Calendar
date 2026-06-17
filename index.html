@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Classroom Calendar</title>
+  <title>Calendrier de la Classe</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background-color: #ffffff; }
     .container { max-width: 800px; margin: 0 auto; }
     .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .nav-buttons button { padding: 6px 12px; cursor: pointer; }
-    .nav-title { margin: 0 16px; font-weight: bold; fontSize: 1.2rem; }
+    .nav-title { margin: 0 16px; font-weight: bold; font-size: 1.2rem; }
     .view-buttons button { padding: 6px 12px; cursor: pointer; background-color: #fff; border: 1px solid #ccc; margin-left: 4px; }
     .view-buttons button.active { background-color: #e2e8f0; }
     .filter-section { margin-bottom: 20px; }
@@ -35,59 +35,58 @@
 <body>
 
   <div class="container">
-    <!-- Top Navbar -->
+    <!-- Navbar supérieure -->
     <div class="navbar">
       <div class="nav-buttons">
         <button onclick="navigateMonth(-1)">◀</button>
-        <span class="nav-title" id="monthYearLabel">June 2026</span>
+        <span class="nav-title" id="monthYearLabel">Septembre 2026</span>
         <button onclick="navigateMonth(1)">▶</button>
       </div>
       <div class="view-buttons">
-        <button id="monthViewBtn" class="active" onclick="setView('month')">Month</button>
-        <button id="weekViewBtn" onclick="setView('week')">Week</button>
-        <button onclick="window.print()">Print</button>
+        <button id="monthViewBtn" onclick="setView('month')">Mois</button>
+        <button id="weekViewBtn" class="active" onclick="setView('week')">Semaine</button>
+        <button onclick="window.print()">Imprimer</button>
       </div>
     </div>
 
-    <!-- Filter Options -->
+    <!-- Options de filtrage -->
     <div class="filter-section">
-      <label style="margin-right: 8px; font-weight: 500;">Filter Dashboard: </label>
+      <label style="margin-right: 8px; font-weight: 500;">Filtrer le tableau : </label>
       <select id="classFilter" onchange="handleFilterChange(this.value)">
-        <option value="all">All Classes</option>
-        <option value="P2">P2 Only</option>
-        <option value="P3B">P3B Only</option>
-        <option value="P4">P4 Only</option>
+        <option value="all">Toutes les classes</option>
+        <option value="P2">Classe P2 uniquement</option>
+        <option value="P4">Classe P4 uniquement</option>
       </select>
     </div>
 
-    <!-- Grid Header Labels -->
+    <!-- En-têtes des jours -->
     <div class="grid-header">
-      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      <div>Dim</div><div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div>
     </div>
 
-    <!-- Main Grid -->
+    <!-- Grille principale -->
     <div class="calendar-grid" id="calendarGrid"></div>
 
-    <!-- Dashboard Panel -->
+    <!-- Panneau de configuration (Dashboard) -->
     <div class="dashboard">
-      <h3>Selected Date Dashboard</h3>
-      <p class="date-string" id="selectedDateText">No date selected</p>
+      <h3>Tableau de bord de la date sélectionnée</h3>
+      <p class="date-string" id="selectedDateText">Aucune date sélectionnée</p>
       <div id="logDisplayArea"></div>
-      <button class="action-btn" id="actionBtn" style="display: none;" onclick="handleAddEditLog()">Add Lesson Log</button>
+      <button class="action-btn" id="actionBtn" style="display: none;" onclick="handleAddEditLog()">Ajouter une leçon</button>
     </div>
   </div>
 
   <script>
-    // State
-    let currentDate = new Date(2026, 5, 17); // June 2026
+    // État de l'application
+    let currentDate = new Date(2026, 8, 10); // Par défaut en Septembre 2026
     let selectedDateKey = "";
-    let currentView = "month";
+    let currentView = "week";
     let currentFilter = "all";
 
-   const logs = {
-      "2026-06-17": { title: "Getting Started Fresh", description: "Rebuilding our calendar app from scratch!", class: "A" },
-      "2026-09-08": { title: "Enter Your Sept 8 Title", description: "Enter your description here", class: "P2" },
-      "2026-09-09": { title: "Enter Your Sept 9 Title", description: "Enter your description here", class: "P3B" }
+    const logs = {
+      "2026-09-08": { title: "Leçon du 8 Septembre", description: "Description de votre leçon ici.", class: "P2" },
+      "2026-09-09": { title: "Leçon du 9 Septembre", description: "Description de votre leçon ici.", class: "P4" },
+      "2026-09-10": { title: "Révision de 11e année", description: "Les temps de verbes", class: "P2" }
     };
 
     function formatDateToKey(dateObj) {
@@ -97,7 +96,6 @@
       return `${y}-${m}-${d}`;
     }
 
-    // FIXED: Navigates by month OR by week depending on your active view
     function navigateMonth(direction) {
       if (currentView === "month") {
         currentDate.setMonth(currentDate.getMonth() + direction);
@@ -126,10 +124,10 @@
 
     function handleAddEditLog() {
       if (!selectedDateKey) return;
-      const title = prompt("Enter Lesson/Event Title:");
+      const title = prompt("Entrez le titre de la leçon / de l'événement :");
       if (!title) return;
-      const description = prompt("Enter Description:");
-      const cls = prompt("Enter Class Category (e.g., P2, P3B, P4):", "P2");
+      const description = prompt("Entrez la description :");
+      const cls = prompt("Entrez la catégorie de la classe (ex: P2, P4) :", "P2");
 
       logs[selectedDateKey] = { title, description, class: cls };
       render();
@@ -139,20 +137,24 @@
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       
-      // FIXED: Label updates correctly for both views
-      const monthLabel = currentDate.toLocaleString("default", { month: "long" });
+      // Configuration de la langue locale en français
+      const monthLabel = currentDate.toLocaleString("fr-FR", { month: "long" });
+      const formattedMonth = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+
       if (currentView === "month") {
-        document.getElementById('monthYearLabel').innerText = `${monthLabel} ${year}`;
+        document.getElementById('monthYearLabel').innerText = `${formattedMonth} ${year}`;
       } else {
-        // Show the specific week span in the header
         const currentDayOfWeek = currentDate.getDay();
         const startOfWeek = new Date(currentDate);
         startOfWeek.setDate(currentDate.getDate() - currentDayOfWeek);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
         
+        const startMonthLabel = startOfWeek.toLocaleString("fr-FR", { month: "short" });
+        const endMonthLabel = endOfWeek.toLocaleString("fr-FR", { month: "short" });
+
         document.getElementById('monthYearLabel').innerText = 
-          `${startOfWeek.toLocaleString("default", { month: "short" })} ${startOfWeek.getDate()} - ${endOfWeek.toLocaleString("default", { month: "short" })} ${endOfWeek.getDate()}, ${year}`;
+          `${startOfWeek.getDate()} ${startMonthLabel} - ${endOfWeek.getDate()} ${endMonthLabel}, ${year}`;
       }
 
       const gridContainer = document.getElementById('calendarGrid');
@@ -164,16 +166,13 @@
         const firstDayOffset = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-        // Previous month offset padding
         for (let i = firstDayOffset - 1; i >= 0; i--) {
           cells.push({ date: new Date(year, month, -i), currentMonth: false });
         }
-        // Current month days
         for (let i = 1; i <= daysInMonth; i++) {
           cells.push({ date: new Date(year, month, i), currentMonth: true });
         }
       } else {
-        // Week View logic
         const currentDayOfWeek = currentDate.getDay();
         const startOfWeek = new Date(currentDate);
         startOfWeek.setDate(currentDate.getDate() - currentDayOfWeek);
@@ -184,7 +183,6 @@
         }
       }
 
-      // Render individual cells
       cells.forEach(cell => {
         const key = formatDateToKey(cell.date);
         const cellEl = document.createElement('div');
@@ -202,38 +200,42 @@
         gridContainer.appendChild(cellEl);
       });
 
-      // Render Dashboard Panel
       const dateTextEl = document.getElementById('selectedDateText');
       const displayArea = document.getElementById('logDisplayArea');
       const actionBtn = document.getElementById('actionBtn');
 
       if (!selectedDateKey) {
-        dateTextEl.innerText = "No date selected";
+        dateTextEl.innerText = "Aucune date sélectionnée";
         displayArea.innerHTML = "";
         actionBtn.style.display = "none";
       } else {
         const [y, m, d] = selectedDateKey.split("-");
-        dateTextEl.innerText = new Date(y, m - 1, d).toDateString();
+        const nativeDate = new Date(y, m - 1, d);
+        
+        // Formatage de la date en français pour le tableau de bord
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        let fullDateString = nativeDate.toLocaleDateString('fr-FR', options);
+        dateTextEl.innerText = fullDateString.charAt(0).toUpperCase() + fullDateString.slice(1);
+        
         actionBtn.style.display = "block";
 
         const activeLog = logs[selectedDateKey];
         if (activeLog) {
-          actionBtn.innerText = "Edit Lesson Log";
+          actionBtn.innerText = "Modifier la leçon";
           displayArea.innerHTML = `
             <div class="log-card">
               <h4>${activeLog.title}</h4>
               <p>${activeLog.description}</p>
-              <span class="class-badge">Class: ${activeLog.class}</span>
+              <span class="class-badge">Classe: ${activeLog.class}</span>
             </div>
           `;
         } else {
-          actionBtn.innerText = "Add Lesson Log";
-          displayArea.innerHTML = `<p class="no-lessons">No lessons logged for this date.</p>`;
+          actionBtn.innerText = "Ajouter une leçon";
+          displayArea.innerHTML = `<p class="no-lessons">Aucune leçon enregistrée pour cette date.</p>`;
         }
       }
     }
 
-    // Run on startup
     render();
   </script>
 </body>
