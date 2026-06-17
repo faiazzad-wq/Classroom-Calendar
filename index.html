@@ -1,222 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Classroom Calendar</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  </head>
-  <body style="margin: 0; background-color: #ffffff;">
-    <div id="root"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classroom Calendar</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background-color: #ffffff; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .nav-buttons button { padding: 6px 12px; cursor: pointer; }
+    .nav-title { margin: 0 16px; font-weight: bold; fontSize: 1.2rem; }
+    .view-buttons button { padding: 6px 12px; cursor: pointer; background-color: #fff; border: 1px solid #ccc; margin-left: 4px; }
+    .view-buttons button.active { background-color: #e2e8f0; }
+    .filter-section { margin-bottom: 20px; }
+    .filter-section select { padding: 4px 8px; }
+    .grid-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; margin-bottom: 8px; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+    .day-cell { padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; position: relative; min-height: 70px; background-color: #fff; transition: all 0.2s ease; }
+    .day-cell.other-month { background-color: #f8fafc; color: #94a3b8; }
+    .day-cell.selected { background-color: #3b82f6 !important; color: #fff !important; font-weight: bold; }
+    .dot { position: absolute; bottom: 6px; right: 6px; width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; }
+    .day-cell.selected .dot { background-color: #fff; }
+    .dashboard { margin-top: 24px; border: 1px solid #cbd5e1; padding: 16px; border-radius: 8px; background-color: #f8fafc; }
+    .dashboard h3 { margin: 0 0 8px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; }
+    .date-string { font-weight: 600; color: #475569; margin: 4px 0; }
+    .log-card { margin-top: 12px; padding: 12px; background-color: #fff; border-radius: 6px; border: 1px solid #e2e8f0; }
+    .log-card h4 { margin: 0 0 4px 0; color: #1e3a8a; }
+    .log-card p { margin: 0 0 8px 0; color: #334155; }
+    .class-badge { font-size: 0.85rem; padding: 2px 6px; background-color: #f1f5f9; border-radius: 4px; font-weight: bold; color: #000; }
+    .action-btn { margin-top: 16px; padding: 8px 16px; background-color: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .no-lessons { color: #64748b; font-style: italic; }
+  </style>
+</head>
+<body>
 
-    <script type="text/babel">
-      const { useState } = React;
+  <div class="container">
+    <!-- Top Navbar -->
+    <div class="navbar">
+      <div class="nav-buttons">
+        <button onclick="navigateMonth(-1)">◀</button>
+        <span class="nav-title" id="monthYearLabel">June 2026</span>
+        <button onclick="navigateMonth(1)">▶</button>
+      </div>
+      <div class="view-buttons">
+        <button id="monthViewBtn" class="active" onclick="setView('month')">Month</button>
+        <button id="weekViewBtn" onclick="setView('week')">Week</button>
+        <button onclick="window.print()">Print</button>
+      </div>
+    </div>
 
-      const INITIAL_LOGS = {
-        "2026-06-17": { title: "Getting Started Fresh", description: "Rebuilding our calendar app from scratch!", class: "A" },
-      };
+    <!-- Filter Options -->
+    <div class="filter-section">
+      <label style="margin-right: 8px; font-weight: 500;">Filter Dashboard: </label>
+      <select id="classFilter" onchange="handleFilterChange(this.value)">
+        <option value="all">All Classes</option>
+        <option value="A">Class A Only</option>
+        <option value="B">Class B Only</option>
+      </select>
+    </div>
 
-      function ClassroomCalendar() {
-        const [currentDate, setCurrentDate] = useState(new Date());
-        const [selectedDateKey, setSelectedDateKey] = useState("");
-        const [logs, setLogs] = useState(INITIAL_LOGS);
-        const [view, setView] = useState("month");
-        const [filter, setFilter] = useState("all");
+    <!-- Grid Header Labels -->
+    <div class="grid-header">
+      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
 
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
+    <!-- Main Grid -->
+    <div class="calendar-grid" id="calendarGrid"></div>
 
-        const formatDateToKey = (dateObj) => {
-          const y = dateObj.getFullYear();
-          const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-          const d = String(dateObj.getDate()).padStart(2, "0");
-          return `${y}-${m}-${d}`;
-        };
+    <!-- Dashboard Panel -->
+    <div class="dashboard">
+      <h3>Selected Date Dashboard</h3>
+      <p class="date-string" id="selectedDateText">No date selected</p>
+      <div id="logDisplayArea"></div>
+      <button class="action-btn" id="actionBtn" style="display: none;" onclick="handleAddEditLog()">Add Lesson Log</button>
+    </div>
+  </div>
 
-        const handleNavigateMonth = (direction) => {
-          const nextMonthDate = new Date(year, month + direction, 1);
-          setCurrentDate(nextMonthDate);
-        };
+  <script>
+    // State
+    let currentDate = new Date(2026, 5, 17); // June 2026
+    let selectedDateKey = "";
+    let currentView = "month";
+    let currentFilter = "all";
 
-        const getDaysInMonth = () => new Date(year, month + 1, 0).getDate();
-        const getFirstDayOffset = () => new Date(year, month, 1).getDay();
+    const logs = {
+      "2026-06-17": { title: "Getting Started Fresh", description: "Rebuilding our calendar app from scratch!", class: "A" }
+    };
 
-        const getWeekDays = () => {
-          const currentDayOfWeek = currentDate.getDay();
-          const startOfWeek = new Date(currentDate);
-          startOfWeek.setDate(currentDate.getDate() - currentDayOfWeek);
+    function formatDateToKey(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dateObj.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
 
-          return Array.from({ length: 7 }, (_, i) => {
-            const day = new Date(startOfWeek);
-            day.setDate(startOfWeek.getDate() + i);
-            return day;
-          });
-        };
+    function navigateMonth(direction) {
+      currentDate.setMonth(currentDate.getMonth() + direction);
+      render();
+    }
 
-        const handleAddEditLog = () => {
-          if (!selectedDateKey) return alert("Please select a date first!");
-          const title = prompt("Enter Lesson/Event Title:");
-          if (!title) return;
-          const description = prompt("Enter Description:");
-          const cls = prompt("Enter Class Category (A or B):", "A").toUpperCase();
+    function setView(viewType) {
+      currentView = viewType;
+      document.getElementById('monthViewBtn').classList.toggle('active', viewType === 'month');
+      document.getElementById('weekViewBtn').classList.toggle('active', viewType === 'week');
+      render();
+    }
 
-          setLogs((prevLogs) => ({
-            ...prevLogs,
-            [selectedDateKey]: { title, description, class: cls },
-          }));
-        };
+    function handleFilterChange(val) {
+      currentFilter = val;
+      render();
+    }
 
-        const renderDayCell = (dateObj, isCurrentMonth = true) => {
-          const dateKey = formatDateToKey(dateObj);
-          const log = logs[dateKey];
-          const isSelected = selectedDateKey === dateKey;
-          const hasVisibleLog = log && (filter === "all" || log.class === filter);
+    function selectDate(key) {
+      selectedDateKey = key;
+      render();
+    }
 
-          return (
-            <div
-              key={dateKey}
-              onClick={() => setSelectedDateKey(dateKey)}
-              style={{
-                padding: "12px",
-                border: "1px solid #e2e8f0",
-                borderRadius: "6px",
-                cursor: "pointer",
-                position: "relative",
-                minHeight: "70px",
-                backgroundColor: isSelected ? "#3b82f6" : isCurrentMonth ? "#fff" : "#f8fafc",
-                color: isSelected ? "#fff" : isCurrentMonth ? "#000" : "#94a3b8",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <span style={{ fontWeight: isSelected ? "bold" : "normal" }}>
-                {dateObj.getDate()}
-              </span>
-              {hasVisibleLog && (
-                <span
-                  style={{
-                    position: "absolute",
-                    bottom: "6px",
-                    right: "6px",
-                    width: "8px",
-                    height: "8px",
-                    backgroundColor: isSelected ? "#fff" : "#22c55e",
-                    borderRadius: "50%",
-                  }}
-                />
-              )}
-            </div>
-          );
-        };
+    function handleAddEditLog() {
+      if (!selectedDateKey) return;
+      const title = prompt("Enter Lesson/Event Title:");
+      if (!title) return;
+      const description = prompt("Enter Description:");
+      const cls = prompt("Enter Class Category (A or B):", "A").toUpperCase();
 
-        const renderCalendarGrid = () => {
-          const weekdaysLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-          if (view === "week") {
-            return (
-              <div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontWeight: "bold", marginBottom: "8px" }}>
-                  {weekdaysLabels.map((lbl) => <div key={lbl}>{lbl}</div>)}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px" }}>
-                  {getWeekDays().map((day) => renderDayCell(day, true))}
-                </div>
-              </div>
-            );
-          }
+      logs[selectedDateKey] = { title, description, class: cls };
+      render();
+    }
 
-          const totalCells = [];
-          const offset = getFirstDayOffset();
-          const daysInMonth = getDaysInMonth();
+    function render() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      
+      // Update Title Label
+      const monthLabel = currentDate.toLocaleString("default", { month: "long" });
+      document.getElementById('monthYearLabel').innerText = `${monthLabel} ${year}`;
 
-          for (let i = offset - 1; i >= 0; i--) {
-            const prevMonthDay = new Date(year, month, -i);
-            totalCells.push(renderDayCell(prevMonthDay, false));
-          }
-          for (let i = 1; i <= daysInMonth; i++) {
-            const currentDay = new Date(year, month, i);
-            totalCells.push(renderDayCell(currentDay, true));
-          }
+      const gridContainer = document.getElementById('calendarGrid');
+      gridContainer.innerHTML = "";
 
-          return (
-            <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontWeight: "bold", marginBottom: "8px" }}>
-                {weekdaysLabels.map((lbl) => <div key={lbl}>{lbl}</div>)}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px" }}>
-                {totalCells}
-              </div>
-            </div>
-          );
-        };
+      let cells = [];
 
-        const getReadableSelectedDate = () => {
-          if (!selectedDateKey) return "No date selected";
-          const [y, m, d] = selectedDateKey.split("-");
-          return new Date(y, m - 1, d).toDateString();
-        };
+      if (currentView === "month") {
+        const firstDayOffset = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-        const activeLog = logs[selectedDateKey];
-
-        return (
-          <div style={{ fontFamily: "system-ui, sans-serif", maxWidth: "800px", margin: "0 auto", padding: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "20px", justifyContent: "space-between" }}>
-              <div>
-                <button onClick={() => handleNavigateMonth(-1)} style={{ padding: "6px 12px", cursor: "pointer" }}>◀</button>
-                <span style={{ margin: "0 16px", fontWeight: "bold", fontSize: "1.2rem" }}>
-                  {currentDate.toLocaleString("default", { month: "long" })} {year}
-                </span>
-                <button onClick={() => handleNavigateMonth(1)} style={{ padding: "6px 12px", cursor: "pointer" }}>▶</button>
-              </div>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button onClick={() => setView("month")} style={{ padding: "6px 12px", backgroundColor: view === "month" ? "#e2e8f0" : "#fff", cursor: "pointer" }}>Month</button>
-                <button onClick={() => setView("week")} style={{ padding: "6px 12px", backgroundColor: view === "week" ? "#e2e8f0" : "#fff", cursor: "pointer" }}>Week</button>
-                <button onClick={() => window.print()} style={{ padding: "6px 12px", cursor: "pointer" }}>Print</button>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{ marginRight: "8px", fontWeight: "500" }}>Filter Dashboard: </label>
-              <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ padding: "4px 8px" }}>
-                <option value="all">All Classes</option>
-                <option value="A">Class A Only</option>
-                <option value="B">Class B Only</option>
-              </select>
-            </div>
-
-            {renderCalendarGrid()}
-
-            <div style={{ marginTop: "24px", border: "1px solid #cbd5e1", padding: "16px", borderRadius: "8px", backgroundColor: "#f8fafc" }}>
-              <h3 style={{ marginTop: 0, borderBottom: "1px solid #cbd5e1", paddingBottom: "8px" }}>Selected Date Dashboard</h3>
-              <p style={{ fontWeight: "600", color: "#475569" }}>{getReadableSelectedDate()}</p>
-              
-              {activeLog ? (
-                <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
-                  <h4 style={{ margin: "0 0 4px 0", color: "#1e3a8a" }}>{activeLog.title}</h4>
-                  <p style={{ margin: "0 0 8px 0", color: "#334155" }}>{activeLog.description}</p>
-                  <span style={{ fontSize: "0.85rem", padding: "2px 6px", backgroundColor: "#f1f5f9", borderRadius: "4px", fontWeight: "bold" }}>
-                    Class: {activeLog.class}
-                  </span>
-                </div>
-              ) : (
-                selectedDateKey && <p style={{ color: "#64748b", fontStyle: "italic" }}>No lessons logged for this date.</p>
-              )}
-
-              {selectedDateKey && (
-                <button 
-                  onClick={handleAddEditLog} 
-                  style={{ marginTop: "16px", padding: "8px 16px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}
-                >
-                  {activeLog ? "Edit Lesson Log" : "Add Lesson Log"}
-                </button>
-              )}
-            </div>
-          </div>
-        );
+        // Previous month offset padding
+        for (let i = firstDayOffset - 1; i >= 0; i--) {
+          cells.push({ date: new Date(year, month, -i), currentMonth: false });
+        }
+        // Current month days
+        for (let i = 1; i <= daysInMonth; i++) {
+          cells.push({ date: new Date(year, month, i), currentMonth: true });
+        }
+      } else {
+        // Week View logic
+        const currentDayOfWeek = currentDate.getDay();
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDayOfWeek);
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(startOfWeek);
+          day.setDate(startOfWeek.getDate() + i);
+          cells.push({ date: day, currentMonth: true });
+        }
       }
 
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<ClassroomCalendar/>);
-    </script>
-  </body>
+      // Render individual cells
+      cells.forEach(cell => {
+        const key = formatDateToKey(cell.date);
+        const cellEl = document.createElement('div');
+        cellEl.className = `day-cell ${!cell.currentMonth ? 'other-month' : ''} ${selectedDateKey === key ? 'selected' : ''}`;
+        cellEl.onclick = () => selectDate(key);
+        cellEl.innerHTML = `<span>${cell.date.getDate()}</span>`;
+
+        const log = logs[key];
+        if (log && (currentFilter === 'all' || log.class === currentFilter)) {
+          const dot = document.createElement('span');
+          dot.className = 'dot';
+          cellEl.appendChild(dot);
+        }
+
+        gridContainer.appendChild(cellEl);
+      });
+
+      // Render Dashboard Panel
+      const dateTextEl = document.getElementById('selectedDateText');
+      const displayArea = document.getElementById('logDisplayArea');
+      const actionBtn = document.getElementById('actionBtn');
+
+      if (!selectedDateKey) {
+        dateTextEl.innerText = "No date selected";
+        displayArea.innerHTML = "";
+        actionBtn.style.display = "none";
+      } else {
+        const [y, m, d] = selectedDateKey.split("-");
+        dateTextEl.innerText = new Date(y, m - 1, d).toDateString();
+        actionBtn.style.display = "block";
+
+        const activeLog = logs[selectedDateKey];
+        if (activeLog) {
+          actionBtn.innerText = "Edit Lesson Log";
+          displayArea.innerHTML = `
+            <div class="log-card">
+              <h4>${activeLog.title}</h4>
+              <p>${activeLog.description}</p>
+              <span class="class-badge">Class: ${activeLog.class}</span>
+            </div>
+          `;
+        } else {
+          actionBtn.innerText = "Add Lesson Log";
+          displayArea.innerHTML = `<p class="no-lessons">No lessons logged for this date.</p>`;
+        }
+      }
+    }
+
+    // Run on startup
+    render();
+  </script>
+</body>
 </html>
