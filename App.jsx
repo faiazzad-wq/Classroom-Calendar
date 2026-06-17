@@ -1,0 +1,228 @@
+import { useState } from "react";
+
+// Initial sample data for your classes
+const INITIAL_LOGS = {
+  "2026-06-17": { title: "Getting Started Fresh", description: "Rebuilding our calendar app from scratch!", class: "A" },
+};
+
+export default function ClassroomCalendar() {
+  // State Management
+  const [currentDate, setCurrentDate] = useState(new Date()); // Tracks the visible month/year
+  const [selectedDateKey, setSelectedDateKey] = useState(""); // Tracks clicked date as "YYYY-MM-DD"
+  const [logs, setLogs] = useState(INITIAL_LOGS);
+  const [view, setView] = useState("month"); // "month" or "week"
+  const [filter, setFilter] = useState("all"); // "all", "A", or "B"
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  // Helper: Format a native Date object safely into a "YYYY-MM-DD" local string key
+  const formatDateToKey = (dateObj) => {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const d = String(dateObj.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  // Month Navigation
+  const handleNavigateMonth = (direction) => {
+    const nextMonthDate = new Date(year, month + direction, 1);
+    setCurrentDate(nextMonthDate);
+  };
+
+  // Calendar Calculation Helpers
+  const getDaysInMonth = () => new Date(year, month + 1, 0).getDate();
+  
+  const getFirstDayOffset = () => new Date(year, month, 1).getDay();
+
+  const getWeekDays = () => {
+    const currentDayOfWeek = currentDate.getDay();
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(currentDate.getDate() - currentDayOfWeek);
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      return day;
+    });
+  };
+
+  // CRUD Operations
+  const handleAddEditLog = () => {
+    if (!selectedDateKey) return alert("Please select a date first!");
+
+    const title = prompt("Enter Lesson/Event Title:");
+    if (!title) return; // Cancelled
+
+    const description = prompt("Enter Description:");
+    const cls = prompt("Enter Class Category (A or B):", "A").toUpperCase();
+
+    setLogs((prevLogs) => ({
+      ...prevLogs,
+      [selectedDateKey]: { title, description, class: cls },
+    }));
+  };
+
+  // Render Core Day Cell
+  const renderDayCell = (dateObj, isCurrentMonth = true) => {
+    const dateKey = formatDateToKey(dateObj);
+    const log = logs[dateKey];
+    const isSelected = selectedDateKey === dateKey;
+    
+    // Check if a dot should appear based on filters
+    const hasVisibleLog = log && (filter === "all" || log.class === filter);
+
+    return (
+      <div
+        key={dateKey}
+        onClick={() => setSelectedDateKey(dateKey)}
+        style={{
+          padding: "12px",
+          border: "1px solid #e2e8f0",
+          borderRadius: "6px",
+          cursor: "pointer",
+          position: "relative",
+          minHeight: "70px",
+          backgroundColor: isSelected ? "#3b82f6" : isCurrentMonth ? "#fff" : "#f8fafc",
+          color: isSelected ? "#fff" : isCurrentMonth ? "#000" : "#94a3b8",
+          transition: "all 0.2s ease",
+        }}
+      >
+        <span style={{ fontWeight: isSelected ? "bold" : "normal" }}>
+          {dateObj.getDate()}
+        </span>
+
+        {hasVisibleLog && (
+          <span
+            style={{
+              position: "absolute",
+              bottom: "6px",
+              right: "6px",
+              width: "8px",
+              height: "8px",
+              backgroundColor: isSelected ? "#fff" : "#22c55e",
+              borderRadius: "50%",
+            }}
+          />
+        )}
+      </div>
+    );
+  };
+
+  // Render Grid Layouts
+  const renderCalendarGrid = () => {
+    const weekdaysLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    if (view === "week") {
+      return (
+        <div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontWeight: "bold", marginBottom: "8px" }}>
+            {weekdaysLabels.map((lbl) => <div key={lbl}>{lbl}</div>)}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px" }}>
+            {getWeekDays().map((day) => renderDayCell(day, true))}
+          </div>
+        </div>
+      );
+    }
+
+    // Month Grid Layout (including padding for previous month offset)
+    const totalCells = [];
+    const offset = getFirstDayOffset();
+    const daysInMonth = getDaysInMonth();
+
+    // 1. Add padding days from the previous month
+    for (let i = offset - 1; i >= 0; i--) {
+      const prevMonthDay = new Date(year, month, -i);
+      totalCells.push(renderDayCell(prevMonthDay, false));
+    }
+
+    // 2. Add current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const currentDay = new Date(year, month, i);
+      totalCells.push(renderDayCell(currentDay, true));
+    }
+
+    return (
+      <div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontWeight: "bold", marginBottom: "8px" }}>
+          {weekdaysLabels.map((lbl) => <div key={lbl}>{lbl}</div>)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px" }}>
+          {totalCells}
+        </div>
+      </div>
+    );
+  };
+
+  // Format Selected Date for Display
+  const getReadableSelectedDate = () => {
+    if (!selectedDateKey) return "No date selected";
+    const [y, m, d] = selectedDateKey.split("-");
+    return new Date(y, m - 1, d).toDateString();
+  };
+
+  const activeLog = logs[selectedDateKey];
+
+  return (
+    <div style={{ fontFamily: "system-ui, sans-serif", maxWidth: "800px", margin: "0 auto", padding: "24px" }}>
+      
+      {/* Top Navbar */}
+      <div style={{ display: "flex", justifyContent: "between", alignItems: "center", marginBottom: "20px", justifyContent: "space-between" }}>
+        <div>
+          <button onClick={() => handleNavigateMonth(-1)} style={{ padding: "6px 12px", cursor: "pointer" }}>◀</button>
+          <span style={{ margin: "0 16px", fontWeight: "bold", fontSize: "1.2rem" }}>
+            {currentDate.toLocaleString("default", { month: "long" })} {year}
+          </span>
+          <button onClick={() => handleNavigateMonth(1)} style={{ padding: "6px 12px", cursor: "pointer" }}>▶</button>
+        </div>
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button onClick={() => setView("month")} style={{ padding: "6px 12px", backgroundColor: view === "month" ? "#e2e8f0" : "#fff", cursor: "pointer" }}>Month</button>
+          <button onClick={() => setView("week")} style={{ padding: "6px 12px", backgroundColor: view === "week" ? "#e2e8f0" : "#fff", cursor: "pointer" }}>Week</button>
+          <button onClick={() => window.print()} style={{ padding: "6px 12px", cursor: "pointer" }}>Print</button>
+        </div>
+      </div>
+
+      {/* Filter Options */}
+      <div style={{ marginBottom: "20px" }}>
+        <label style={{ marginRight: "8px", fontWeight: "500" }}>Filter Dashboard: </label>
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ padding: "4px 8px" }}>
+          <option value="all">All Classes</option>
+          <option value="A">Class A Only</option>
+          <option value="B">Class B Only</option>
+        </select>
+      </div>
+
+      {/* Main Grid View */}
+      {renderCalendarGrid()}
+
+      {/* Lesson Log Sidebar/Panel */}
+      <div style={{ marginTop: "24px", border: "1px solid #cbd5e1", padding: "16px", borderRadius: "8px", backgroundColor: "#f8fafc" }}>
+        <h3 style={{ marginTop: 0, borderBottom: "1px solid #cbd5e1", paddingBottom: "8px" }}>Selected Date Dashboard</h3>
+        <p style={{ fontWeight: "600", color: "#475569" }}>{getReadableSelectedDate()}</p>
+        
+        {activeLog ? (
+          <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
+            <h4 style={{ margin: "0 0 4px 0", color: "#1e3a8a" }}>{activeLog.title}</h4>
+            <p style={{ margin: "0 0 8px 0", color: "#334155" }}>{activeLog.description}</p>
+            <span style={{ fontSize: "0.85rem", padding: "2px 6px", backgroundColor: "#f1f5f9", borderRadius: "4px", fontWeight: "bold" }}>
+              Class: {activeLog.class}
+            </span>
+          </div>
+        ) : (
+          selectedDateKey && <p style={{ color: "#64748b", fontStyle: "italic" }}>No lessons logged for this date.</p>
+        )}
+
+        {selectedDateKey && (
+          <button 
+            onClick={handleAddEditLog} 
+            style={{ marginTop: "16px", padding: "8px 16px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}
+          >
+            {activeLog ? "Edit Lesson Log" : "Add Lesson Log"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
