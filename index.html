@@ -4,17 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Classroom Calendar</title>
-    <!-- Load React directly from CDN to bypass compilation bugs -->
+    <!-- Load React and Babel directly so it works in a single file -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- Babel allows the browser to understand JSX inside the script tag -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body style="margin: 0; background-color: #ffffff;">
     <div id="root"></div>
 
     <script type="text/babel">
-      // Paste your exact App.jsx code directly here so the browser can read it instantly
       const { useState } = React;
 
       const INITIAL_LOGS = {
