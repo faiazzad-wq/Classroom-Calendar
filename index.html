@@ -95,8 +95,13 @@
       return `${y}-${m}-${d}`;
     }
 
+    // FIXED: Navigates by month OR by week depending on your active view
     function navigateMonth(direction) {
-      currentDate.setMonth(currentDate.getMonth() + direction);
+      if (currentView === "month") {
+        currentDate.setMonth(currentDate.getMonth() + direction);
+      } else {
+        currentDate.setDate(currentDate.getDate() + (direction * 7));
+      }
       render();
     }
 
@@ -122,7 +127,7 @@
       const title = prompt("Enter Lesson/Event Title:");
       if (!title) return;
       const description = prompt("Enter Description:");
-      const cls = prompt("Enter Class Category (A or B):", "A").toUpperCase();
+      const cls = prompt("Enter Class Category (e.g., P2, P3B, P4):", "P2");
 
       logs[selectedDateKey] = { title, description, class: cls };
       render();
@@ -132,9 +137,21 @@
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       
-      // Update Title Label
+      // FIXED: Label updates correctly for both views
       const monthLabel = currentDate.toLocaleString("default", { month: "long" });
-      document.getElementById('monthYearLabel').innerText = `${monthLabel} ${year}`;
+      if (currentView === "month") {
+        document.getElementById('monthYearLabel').innerText = `${monthLabel} ${year}`;
+      } else {
+        // Show the specific week span in the header
+        const currentDayOfWeek = currentDate.getDay();
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDayOfWeek);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        
+        document.getElementById('monthYearLabel').innerText = 
+          `${startOfWeek.toLocaleString("default", { month: "short" })} ${startOfWeek.getDate()} - ${endOfWeek.toLocaleString("default", { month: "short" })} ${endOfWeek.getDate()}, ${year}`;
+      }
 
       const gridContainer = document.getElementById('calendarGrid');
       gridContainer.innerHTML = "";
